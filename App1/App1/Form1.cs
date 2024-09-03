@@ -1,17 +1,17 @@
-using static System.Runtime.InteropServices.Marshalling.IIUnknownCacheStrategy;
+using System.Collections.Specialized;
+using System.Security.Policy;
 using System.Web;
 
 namespace App1
 {
     public partial class Form1 : Form
     {
-        private string AppProtocol = "myapp://";
 
         public Form1(string[] args)
         {
             InitializeComponent();
             SetupCustomControls();
-            ParseAndDisplayArgs(args);
+            ListParams(args);
         }
 
         private void SetupCustomControls()
@@ -33,47 +33,44 @@ namespace App1
             this.Text = "App1";
         }
 
-        private void ParseAndDisplayArgs(string[] args)
+        private void ListParams(string[] args)
         {
             if (args.Length > 0)
             {
-                string url = args[0];
+                string parameters = args[0];
 
+                NameValueCollection collection = ConvertStringArgsToNameValueCollection(parameters);
 
-                // Split the URL by the "?" character to separate the base URL and the query string
-                var parts = url.Split('?');
-
-                if (parts.Length > 1)
+                foreach (string? key in collection.AllKeys)
                 {
-                    string baseUrl = parts[0];
-                    string query = parts[1];
-
-
-
-                    // Check if the base URL matches the expected protocol and path
-                    if (baseUrl.StartsWith(AppProtocol, StringComparison.OrdinalIgnoreCase))
-                    {
-                        var parameters = HttpUtility.ParseQueryString(query);
-                        foreach (string? key in parameters.AllKeys)
-                        {
-                            listBoxParams.Items.Add($"{key}: {parameters[key]}");
-                        }
-                        labelInfo.Text = $"Received {parameters.Count} parameter(s)" + " " + url;
-                    }
-                    else
-                    {
-                        labelInfo.Text = "Invalid URL format";
-                    }
+                    listBoxParams.Items.Add($"{key}: {collection[key]}");
                 }
-                else
-                {
-                    labelInfo.Text = "No parameters received";
-                }
+                labelInfo.Text = $"Received {collection.Count} parameter(s)";
             }
             else
             {
                 labelInfo.Text = "No arguments received";
             }
+        }
+
+
+        public static NameValueCollection ConvertStringArgsToNameValueCollection(string argsString)
+        {
+            var collection = new NameValueCollection();
+            string[] args = argsString.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            for (int i = 0; i < args.Length; i += 2)
+            {
+                string key = args[i];
+                string value = (i + 1 < args.Length) ? args[i + 1] : string.Empty;
+
+                // Remove any leading dashes from the key if present
+                key = key.TrimStart('-');
+
+                collection.Add(key, value);
+            }
+
+            return collection;
         }
 
 

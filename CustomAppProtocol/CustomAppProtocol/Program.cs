@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Reflection.Metadata;
 using System.Web;
 
 namespace AppController
@@ -9,56 +10,79 @@ namespace AppController
     {
         static void Main(string[] args)
         {
-            Debugger.Launch();
-            try
+            string AppProtocol = "myapp://";
+
+            if (args.Length > 0)
             {
-                if (args.Length > 0)
+                string url = args[0];
+
+                // Print the raw URL for debugging
+                Console.WriteLine($"Raw URL: {url}");
+
+                // Extract the app identifier from the URL
+                string appToRun = url.Replace("myapp://", "").ToLower();
+                appToRun.Replace("/", "");
+
+                int index = appToRun.IndexOf("?");
+                if (index >= 0)
                 {
-                    string url = args[0];
+                    appToRun = appToRun.Substring(0, index);
+                }
 
-                    // Print the raw URL for debugging
-                    Console.WriteLine($"Raw URL: {url}");
+                //Split the URL by the '?' char to seperate the base and query parts 
+                var parts = url.Split('?');
 
-                    // Extract the app identifier from the URL
-                    string appToRun = url.Replace("myapp://", "").ToLower();
+                if (parts.Length > 1)
+                {
+                    string baseUrl = parts[0];
+                    string query = parts[1];
 
-                    int index = appToRun.IndexOf("?");
-                    if (index >= 0)
+                    //Check if the base URL match the protocol 
+                    if (baseUrl.StartsWith(AppProtocol, StringComparison.OrdinalIgnoreCase))
                     {
-                        appToRun = appToRun.Substring(0, index);
+                        var paramsCollection = HttpUtility.ParseQueryString(query);
+
+                        var values = paramsCollection.Cast<string>().Select(e => paramsCollection[e]);
+
+                        var params_str = string.Join(",", values);
+
+
+                        Console.WriteLine($"Recieved {paramsCollection.Count} parameters(s)");
+
+                        // The foreach loop will iterate over the params collection and print the key and value for each param
+                        foreach (var key in paramsCollection.AllKeys)
+                        {
+                            Console.WriteLine($"Key: {key} => Value: {paramsCollection[key]}");
+                        }
+
+                        // Launch the appropriate app with parameters
+                        try
+                        {
+                            RunApp(appToRun, params_str);
+                        }
+                        catch (ArgumentException ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid URL format!");
                     }
 
-                    // Print the extracted app name for debugging
-                    Console.WriteLine($"Extracted App Name: {appToRun}");
-                    appToRun.Replace("/", "");
-
-                    // Extract the query parameters
-                    //Uri uri = new Uri(url);
-                    //NameValueCollection queryParameters = HttpUtility.ParseQueryString(uri.Query);
-
-                    // Convert the parameters to a command-line string
-                    //string parameters = ConvertParametersToCommandLine(queryParameters);
-                    string parameter = url;
-
-                    // Launch the appropriate app with parameters
-                    try
-                    {
-                        RunApp(appToRun, parameter);
-                    }
-                    catch (ArgumentException ex)
-                    {
-                        Console.WriteLine(ex.ToString());
-                    }
                 }
                 else
                 {
-                    Console.WriteLine("No arguments provided.");
+                    Console.WriteLine("No parameters received!");
                 }
 
+                // Print the extracted app name for debugging
+                Console.WriteLine($"Extracted App Name: {appToRun}");
+
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine("No arguments recieved!");
             }
 
             // Keep the console open for debugging
@@ -66,23 +90,7 @@ namespace AppController
             Console.ReadLine();
         }
 
-        /*static string ConvertParametersToCommandLine(NameValueCollection queryParameters)
-        {
-            string parameters = string.Empty;
-
-            if (queryParameters?.AllKeys != null)
-            {
-                foreach (string? key in queryParameters.AllKeys)
-                {
-                    if (key != null)
-                    {
-                        parameters += $"{key}={queryParameters[key]} ";
-                    }
-                }
-            }
-
-            return parameters.Trim(); // Trim to remove the trailing space
-        }*/
+        
 
 
         static void RunApp(string app, string parameter)
@@ -98,12 +106,8 @@ namespace AppController
             // Start the process with the command-line parameters
             ProcessStartInfo startInfo = new ProcessStartInfo(appPath)
             {
-                //Arguments = parameters
-                //Arguments = "customerID=12345 screenNumber=1"
-                //Arguments = "myapp://app1/?customerID=12345&scrnNmbr=1"
-                Arguments = parameter
+                ArgumentList = {parameter}
             };
-            Console.WriteLine("parameter: " + parameter);
             Process.Start(startInfo);
         }
     }
