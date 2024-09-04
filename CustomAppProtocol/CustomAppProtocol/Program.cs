@@ -2,12 +2,15 @@
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Reflection.Metadata;
+using System.Text.RegularExpressions;
 using System.Web;
 
 namespace AppController
 {
-    class Program
+    class Program()
     {
+        private readonly string baseDirectory = "D:\\MyApps\\";
+
         static void Main(string[] args)
         {
             string AppProtocol = "myapp://";
@@ -21,7 +24,7 @@ namespace AppController
 
                 // Extract the app identifier from the URL
                 string appToRun = url.Replace("myapp://", "").ToLower();
-                appToRun.Replace("/", "");
+                
 
                 int index = appToRun.IndexOf("?");
                 if (index >= 0)
@@ -41,10 +44,8 @@ namespace AppController
                     if (baseUrl.StartsWith(AppProtocol, StringComparison.OrdinalIgnoreCase))
                     {
                         var paramsCollection = HttpUtility.ParseQueryString(query);
-
-                        var values = paramsCollection.Cast<string>().Select(e => paramsCollection[e]);
-
-                        var params_str = string.Join(",", values);
+                        var keyValuePairs = paramsCollection.AllKeys.Select(k => $"{k} => {paramsCollection[k]}");
+                        var params_str = string.Join(", ", keyValuePairs);
 
 
                         Console.WriteLine($"Recieved {paramsCollection.Count} parameters(s)");
@@ -85,28 +86,38 @@ namespace AppController
                 Console.WriteLine("No arguments recieved!");
             }
 
-            // Keep the console open for debugging
-            Console.WriteLine("Press Enter to exit...");
             Console.ReadLine();
+
         }
 
         
 
-
         static void RunApp(string app, string parameter)
         {
-            string appPath = app switch
+            var bD = new Program();
+
+            if (string.IsNullOrWhiteSpace(app))
+                throw new ArgumentException("App identifier cannot be empty!", nameof(app));
+
+            app = app.Trim('/');
+
+            var match = Regex.Match(app, @"^app(\d+)$");
+            if (!match.Success)
+                throw new ArgumentException($"Invalid app identifier format: {app}", nameof(app));
+
+            string appNumber = match.Groups[1].Value;
+            string appName = $"App{appNumber}";
+            string exePath = Path.Combine(bD.baseDirectory, appName, appName, "bin", "Debug", "net8.0-windows", $"{appName}.exe");
+
+            if (!File.Exists(exePath))
             {
-                "app1/" => @"D:\MyApps\App1\App1\bin\Debug\net8.0-windows\App1.exe",
-                "app2/" => @"D:\MyApps\App2\App2\bin\Debug\net8.0-windows\App2.exe",
-                "app3/" => @"D:\MyApps\App3\App3\bin\Debug\net8.0-windows\App3.exe",
-                _ => throw new ArgumentException("Unknown app."),
-            };
+                throw new FileNotFoundException($"Executable not found for {app}", exePath);
+            }
 
             // Start the process with the command-line parameters
-            ProcessStartInfo startInfo = new ProcessStartInfo(appPath)
+            ProcessStartInfo startInfo = new ProcessStartInfo(exePath)
             {
-                ArgumentList = {parameter}
+                ArgumentList = { parameter }
             };
             Process.Start(startInfo);
         }

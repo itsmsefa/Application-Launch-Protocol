@@ -11,7 +11,7 @@ namespace App3
         {
             InitializeComponent();
             SetupCustomControls();
-            ParseAndDisplayArgs(args);
+            ListParams(args);
         }
 
         private void SetupCustomControls()
@@ -33,38 +33,25 @@ namespace App3
             this.Text = "App3";
         }
 
-        private void ParseAndDisplayArgs(string[] args)
+        private void ListParams(string[] args)
         {
-            if (args.Length > 0)
+            if (args.Length == 0)
             {
-                string url = args[0];
-                if (url.StartsWith(AppProtocol))
-                {
-                    Uri uri = new Uri(url);
-                    string query = uri.Query;
-
-                    if (!string.IsNullOrEmpty(query))
-                    {
-                        var parameters = HttpUtility.ParseQueryString(query);
-                        foreach (string key in parameters.AllKeys)
-                        {
-                            listBoxParams.Items.Add($"{key}: {parameters[key]}");
-                        }
-                        labelInfo.Text = $"Received {parameters.Count} parameter(s)";
-                    }
-                    else
-                    {
-                        labelInfo.Text = "No parameters received";
-                    }
-                }
-                else
-                {
-                    labelInfo.Text = "Invalid URL format";
-                }
+                MessageBox.Show("No arguments provided.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
-            else
+
+            string paramString = args[0];
+            var keyValuePairs = paramString.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+            int pairs = keyValuePairs.Length;
+
+            labelInfo.Text = $"Received {pairs} parameter(s)";
+
+            listBoxParams.Items.Clear();
+
+            foreach (var pair in keyValuePairs)
             {
-                labelInfo.Text = "No arguments received";
+                listBoxParams.Items.Add(pair);
             }
         }
 

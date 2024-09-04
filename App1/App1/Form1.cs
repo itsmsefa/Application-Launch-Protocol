@@ -35,44 +35,25 @@ namespace App1
 
         private void ListParams(string[] args)
         {
-            if (args.Length > 0)
+            if (args.Length == 0)
             {
-                string parameters = args[0];
-
-                NameValueCollection collection = ConvertStringArgsToNameValueCollection(parameters);
-
-                foreach (string? key in collection.AllKeys)
-                {
-                    listBoxParams.Items.Add($"{key}: {collection[key]}");
-                }
-                labelInfo.Text = $"Received {collection.Count} parameter(s)";
+                MessageBox.Show("No arguments provided.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
-            else
+
+            string paramString = args[0];
+            var keyValuePairs = paramString.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+            int pairs = keyValuePairs.Length;
+
+            labelInfo.Text = $"Received {pairs} parameter(s)";
+
+            listBoxParams.Items.Clear();
+
+            foreach (var pair in keyValuePairs)
             {
-                labelInfo.Text = "No arguments received";
+                listBoxParams.Items.Add(pair);
             }
         }
-
-
-        public static NameValueCollection ConvertStringArgsToNameValueCollection(string argsString)
-        {
-            var collection = new NameValueCollection();
-            string[] args = argsString.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-            for (int i = 0; i < args.Length; i += 2)
-            {
-                string key = args[i];
-                string value = (i + 1 < args.Length) ? args[i + 1] : string.Empty;
-
-                // Remove any leading dashes from the key if present
-                key = key.TrimStart('-');
-
-                collection.Add(key, value);
-            }
-
-            return collection;
-        }
-
 
         private void Form1_Load(object sender, EventArgs e)
         {

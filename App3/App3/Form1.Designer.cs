@@ -35,7 +35,7 @@
             // labelInfo
             // 
             labelInfo.AutoSize = true;
-            labelInfo.Location = new Point(12, 74);
+            labelInfo.Location = new Point(497, 220);
             labelInfo.Name = "labelInfo";
             labelInfo.Size = new Size(67, 15);
             labelInfo.TabIndex = 0;
@@ -46,7 +46,7 @@
             // 
             listBoxParams.FormattingEnabled = true;
             listBoxParams.ItemHeight = 15;
-            listBoxParams.Location = new Point(12, 106);
+            listBoxParams.Location = new Point(497, 238);
             listBoxParams.Name = "listBoxParams";
             listBoxParams.Size = new Size(279, 184);
             listBoxParams.TabIndex = 1;
