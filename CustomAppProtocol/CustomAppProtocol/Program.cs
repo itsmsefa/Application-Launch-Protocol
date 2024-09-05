@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Specialized;
-using System.Diagnostics;
-using System.Reflection.Metadata;
+﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Web;
 
@@ -9,11 +6,11 @@ namespace AppController
 {
     class Program()
     {
-        private readonly string baseDirectory = "D:\\MyApps\\";
+        private static readonly string baseDirectory = "D:\\MyApps\\";
 
         static void Main(string[] args)
         {
-            string AppProtocol = "myapp://";
+            string appProtocol = "myapp://";
 
             if (args.Length > 0)
             {
@@ -22,30 +19,34 @@ namespace AppController
                 // Print the raw URL for debugging
                 Console.WriteLine($"Raw URL: {url}");
 
-                // Extract the app identifier from the URL
-                string appToRun = url.Replace("myapp://", "").ToLower();
-                
-
-                int index = appToRun.IndexOf("?");
-                if (index >= 0)
+                if (string.IsNullOrEmpty(url))
                 {
-                    appToRun = appToRun.Substring(0, index);
+                    Console.WriteLine("URL is missing");
+                    return;
                 }
 
+                string appToRun;
                 //Split the URL by the '?' char to seperate the base and query parts 
-                var parts = url.Split('?');
-
-                if (parts.Length > 1)
+                url = url.Replace(appProtocol, "");
+                var urlParts = url.Split('?');
+                if (urlParts.Length == 0)
                 {
-                    string baseUrl = parts[0];
-                    string query = parts[1];
+                    Console.WriteLine("App name missing in the URL");
+                    return;
+                }
+                else if (urlParts.Length >= 1)
+                {
+                    appToRun = urlParts[0];
+                    // Print the extracted app name for debugging
+                    Console.WriteLine($"Extracted App Name: {appToRun}");
 
-                    //Check if the base URL match the protocol 
-                    if (baseUrl.StartsWith(AppProtocol, StringComparison.OrdinalIgnoreCase))
+                    string params_str = "";
+                    if (urlParts.Length > 1)
                     {
+                        string query = urlParts[1];
                         var paramsCollection = HttpUtility.ParseQueryString(query);
                         var keyValuePairs = paramsCollection.AllKeys.Select(k => $"{k} => {paramsCollection[k]}");
-                        var params_str = string.Join(", ", keyValuePairs);
+                        params_str = string.Join(", ", keyValuePairs);
 
 
                         Console.WriteLine($"Recieved {paramsCollection.Count} parameters(s)");
@@ -55,30 +56,22 @@ namespace AppController
                         {
                             Console.WriteLine($"Key: {key} => Value: {paramsCollection[key]}");
                         }
-
-                        // Launch the appropriate app with parameters
-                        try
-                        {
-                            RunApp(appToRun, params_str);
-                        }
-                        catch (ArgumentException ex)
-                        {
-                            Console.WriteLine(ex.ToString());
-                        }
                     }
-                    else
+
+                    try
                     {
-                        Console.WriteLine("Invalid URL format!");
+                        // Launch the appropriate app with parameters
+                        RunApp(appToRun, params_str);
                     }
-
+                    catch (ArgumentException ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                    }
                 }
                 else
                 {
                     Console.WriteLine("No parameters received!");
                 }
-
-                // Print the extracted app name for debugging
-                Console.WriteLine($"Extracted App Name: {appToRun}");
 
             }
             else
@@ -87,24 +80,24 @@ namespace AppController
             }
         }
 
-        
+
 
         static void RunApp(string app, string parameter)
         {
-            var bD = new Program();
 
             if (string.IsNullOrWhiteSpace(app))
                 throw new ArgumentException("App identifier cannot be empty!", nameof(app));
 
+
             app = app.Trim('/');
 
-            var match = Regex.Match(app, @"^app(\d+)$");
+            var match = Regex.Match(app, @"^App(\d+)$");
             if (!match.Success)
                 throw new ArgumentException($"Invalid app identifier format: {app}", nameof(app));
 
             string appNumber = match.Groups[1].Value;
             string appName = $"App{appNumber}";
-            string exePath = Path.Combine(bD.baseDirectory, appName, appName, "bin", "Debug", "net8.0-windows", $"{appName}.exe");
+            string exePath = Path.Combine(baseDirectory, appName, appName, "bin", "Debug", "net8.0-windows", $"{appName}.exe");
 
             if (!File.Exists(exePath))
                 throw new FileNotFoundException($"Executable not found for {app}", exePath);
