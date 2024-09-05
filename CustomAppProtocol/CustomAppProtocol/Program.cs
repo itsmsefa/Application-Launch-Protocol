@@ -85,9 +85,6 @@ namespace AppController
             {
                 Console.WriteLine("No arguments recieved!");
             }
-
-            Console.ReadLine();
-
         }
 
         
@@ -110,9 +107,7 @@ namespace AppController
             string exePath = Path.Combine(bD.baseDirectory, appName, appName, "bin", "Debug", "net8.0-windows", $"{appName}.exe");
 
             if (!File.Exists(exePath))
-            {
                 throw new FileNotFoundException($"Executable not found for {app}", exePath);
-            }
 
             // Start the process with the command-line parameters
             ProcessStartInfo startInfo = new ProcessStartInfo(exePath)
