@@ -10,7 +10,7 @@ namespace CustomAppProtocol
 
         static void Main(string[] args)
         {
-            string appProtocol = "myapp://";
+            string appProtocol = "myapp:/";
 
             if (args.Length > 0)
             {
@@ -21,18 +21,17 @@ namespace CustomAppProtocol
 
                 if (string.IsNullOrEmpty(url))
                 {
-                    Console.WriteLine("URL is missing");
-                    return;
+                    throw new ArgumentException("URL is missing!", nameof(args));
                 }
 
                 string appToRun;
                 //Split the URL by the '?' char to seperate the base and query parts 
                 url = url.Replace(appProtocol, "", StringComparison.Ordinal);
+                Console.WriteLine($"URL after removing protocol: {url}");
                 var urlParts = url.Split('?');
-                if (urlParts.Length == 0)
+                if (urlParts[0].Length == 0)
                 {
-                    Console.WriteLine("App name missing in the URL");
-                    return;
+                    throw new FormatException("App name is missing in the url!");
                 }
                 else if (urlParts.Length >= 1)
                 {
@@ -70,16 +69,14 @@ namespace CustomAppProtocol
                 }
                 else
                 {
-                    Console.WriteLine("No parameters received!");
+                    throw new ArgumentException("No parameters received!");
                 }
 
             }
             else
             {
-                Console.WriteLine("No arguments recieved!");
+                throw new ArgumentException("No arguments received!", nameof(args));
             }
-
-            Console.ReadLine();
         }
 
 
