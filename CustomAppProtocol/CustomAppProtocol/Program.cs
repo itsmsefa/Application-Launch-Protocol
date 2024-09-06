@@ -2,11 +2,11 @@
 using System.Text.RegularExpressions;
 using System.Web;
 
-namespace AppController
+namespace CustomAppProtocol
 {
-    class Program()
+    partial class Program()
     {
-        private static readonly string baseDirectory = "D:\\MyApps\\";
+        private const string baseDirectory = "D:\\MyApps\\";
 
         static void Main(string[] args)
         {
@@ -27,7 +27,7 @@ namespace AppController
 
                 string appToRun;
                 //Split the URL by the '?' char to seperate the base and query parts 
-                url = url.Replace(appProtocol, "");
+                url = url.Replace(appProtocol, "", StringComparison.Ordinal);
                 var urlParts = url.Split('?');
                 if (urlParts.Length == 0)
                 {
@@ -78,6 +78,8 @@ namespace AppController
             {
                 Console.WriteLine("No arguments recieved!");
             }
+
+            Console.ReadLine();
         }
 
 
@@ -91,7 +93,7 @@ namespace AppController
 
             app = app.Trim('/');
 
-            var match = Regex.Match(app, @"^App(\d+)$");
+            var match = MyRegex().Match(app);
             if (!match.Success)
                 throw new ArgumentException($"Invalid app identifier format: {app}", nameof(app));
 
@@ -103,11 +105,14 @@ namespace AppController
                 throw new FileNotFoundException($"Executable not found for {app}", exePath);
 
             // Start the process with the command-line parameters
-            ProcessStartInfo startInfo = new ProcessStartInfo(exePath)
+            ProcessStartInfo startInfo = new(exePath)
             {
                 ArgumentList = { parameter }
             };
             Process.Start(startInfo);
         }
+
+        [GeneratedRegex(@"^App(\d+)$")]
+        private static partial Regex MyRegex();
     }
 }
