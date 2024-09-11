@@ -8,7 +8,8 @@ namespace CustomAppProtocol
     {
         private const string baseDirectory = "D:\\MyApps\\";
 
-        static void Main(string[] args)
+        // Parse the URL into app name and parameters then convert the parameters to a string to pass to the app
+        static async Task Main(string[] args)
         {
             string appProtocol = "myapp:/";
 
@@ -43,7 +44,7 @@ namespace CustomAppProtocol
                 else if (urlParts.Length >= 1)
                 {
                     appToRun = urlParts[0];
-                    string params_str = "";
+                    string paramsStr = "";
 
                     // Print the extracted app name for debugging
                     Console.WriteLine($"Extracted App Name: {appToRun}");
@@ -52,11 +53,15 @@ namespace CustomAppProtocol
                     if (urlParts.Length > 1)
                     {
                         string query = urlParts[1];
+
+                        // Parse the query string into a collection of key-value pairs
                         var paramsCollection = HttpUtility.ParseQueryString(query);
+
+                        // Create a list of key-value pairs from the params collection
                         var keyValuePairs = paramsCollection.AllKeys.Select(k => $"{k} => {paramsCollection[k]}");
 
                         // Join the key-value pairs into a single string
-                        params_str = string.Join(", ", keyValuePairs);
+                        paramsStr = string.Join(", ", keyValuePairs);
 
                         // Print the parameters for debugging
                         Console.WriteLine($"Recieved {paramsCollection.Count} parameters(s)");
@@ -70,8 +75,19 @@ namespace CustomAppProtocol
 
                     try
                     {
-                        // Launch the appropriate app with parameters
-                        RunApp(appToRun, params_str);
+                        // Dynamically check if the requested app is already running
+                        var appRunningTask = Task.Run(() => Process.GetProcessesByName(appToRun).Length > 0);
+
+                        if (await appRunningTask.ConfigureAwait(true))
+                        {
+                            Console.WriteLine($"{appToRun} is already running. Cancelling new request.");
+                            return;
+                        }
+                        else
+                        {
+                            // Launch the appropriate app with parameters
+                            RunApp(appToRun, paramsStr);
+                        }
                     }
                     catch (ArgumentException ex)
                     {
@@ -82,20 +98,19 @@ namespace CustomAppProtocol
                 {
                     throw new ArgumentException("No parameters received!");
                 }
-
             }
             else
             {
                 throw new ArgumentException("No arguments received!", nameof(args));
             }
-
-            Console.ReadLine();
         }
+
 
         // Define a regex pattern to match the app name
         [GeneratedRegex(@"^App(\d+)$")]
         private static partial Regex MyRegex();
 
+        // Run the specified app with the given parameter
         static void RunApp(string app, string parameter)
         {
             if (string.IsNullOrWhiteSpace(app))
@@ -120,5 +135,6 @@ namespace CustomAppProtocol
             };
             Process.Start(startInfo);
         }
+
     }
 }
