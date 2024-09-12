@@ -75,19 +75,8 @@ namespace CustomAppProtocol
 
                     try
                     {
-                        // Dynamically check if the requested app is already running
-                        var appRunningTask = Task.Run(() => Process.GetProcessesByName(appToRun).Length > 0);
-
-                        if (await appRunningTask.ConfigureAwait(true))
-                        {
-                            Console.WriteLine($"{appToRun} is already running. Cancelling new request.");
-                            return;
-                        }
-                        else
-                        {
-                            // Launch the appropriate app with parameters
-                            RunApp(appToRun, paramsStr);
-                        }
+                        // Launch the appropriate app with parameters
+                        RunApp(appToRun, paramsStr);
                     }
                     catch (ArgumentException ex)
                     {
@@ -104,7 +93,6 @@ namespace CustomAppProtocol
                 throw new ArgumentException("No arguments received!", nameof(args));
             }
         }
-
 
         // Define a regex pattern to match the app name
         [GeneratedRegex(@"^App(\d+)$")]
